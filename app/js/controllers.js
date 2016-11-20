@@ -3756,6 +3756,36 @@ angular.module('myApp.controllers', ['myApp.i18n'])
       })
     }
 
+    $scope.addChannelAdmin = function () {
+      var disabled = [];
+      angular.forEach(($scope.chatFull.participants || {}).participants || [], function(participant){
+        if (
+          participant._ == 'channelParticipantEditor' ||
+          participant._ == 'channelParticipantModerator' ||
+          participant._ == 'channelParticipantCreator'
+        ) {
+          disabled.push(participant.user_id);
+        }
+      });
+
+      ContactsSelectService.selectContact({disabled: disabled}).then(function (userID) {
+        var userRole = "channelRoleEditor";  // channelRoleEditor is used in other apps (because moderator is useless, huh)
+        MtpApiManager.invokeApi('channels.editAdmin', {
+          channel: AppChatsManager.getChannelInput($scope.chatID),
+          user_id: AppUsersManager.getUserInput(userID),
+          role: {_: userRole}
+        }).then(onChatUpdated);
+      });
+    };
+
+    $scope.removeChannelAdmin = function (userID) {
+      MtpApiManager.invokeApi('channels.editAdmin', {
+          channel: AppChatsManager.getChannelInput($scope.chatID),
+          user_id: AppUsersManager.getUserInput(userID),
+          role: {_: "channelRoleEmpty"}
+        }).then(onChatUpdated);
+    };
+
     $scope.kickFromChannel = function (userID) {
       MtpApiManager.invokeApi('channels.kickFromChannel', {
         channel: AppChatsManager.getChannelInput($scope.chatID),
